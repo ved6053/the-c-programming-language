@@ -1,36 +1,34 @@
-/*
-Exercise 4-3. Given the basic framework, it's straightforward to extend the calculator. Add the
-modulus (%) operator and provisions for negative numbers.
-
-Exercise 4-4. Add the commands to print the top elements of the stack without popping, to
-duplicate it, and to swap the top two elements. Add a command to clear the stack.
-
-Exercise 4-5. Add access to library functions like sin, exp, and pow. See <math.h>
-
-Exercise 4-6. Add commands for handling variables. (It's easy to provide twenty-six variables
-with single-letter names.) Add a variable for the most recently printed value.
-
-*/
+/*Exercise 4-10. An alternate organization uses getline to read an entire input line; this makes
+getch and ungetch unnecessary. Revise the calculator to use this approach.*/
 #include <stdio.h>
 #include <stdlib.h> /* for atof() */
 #include <ctype.h>
 #include<math.h>
+#define MAXLINE 100
+
 #define MAXOP 100 /* max size of operand or operator */
 #define NUMBER '0' /* signal that a number was found */
 #define MAXVAL 100 /* maximum depth of val stack */
 #define BUFSIZE 100
+
 int getop(char []);
 void push(double);
 double pop(void);
 double top(void);
 void swap(void);
 void clear(void);
+int getline(char line[],int limit);
+
+int li= 0;  /* input line index */
+char line[MAXLINE];  /* one input line */
+
 /* reverse Polish calculator */
 int main()
 {
     int type;
     double r=0.0,op2;
     char s[MAXOP];
+   
     while ((type = getop(s)) != EOF) {
         switch (type) {
             case NUMBER:
@@ -81,6 +79,7 @@ int main()
                 break;
         }
     }
+    
     return 0;
 }
 
@@ -123,13 +122,15 @@ void swap(void)
 void clear(void){
     sp=0;
 }
-int getch(void);
-void ungetch(int);
-/* getop: get next character or numeric operand */
 int getop(char s[])
 {
     int i, c;
-    while ((s[0] = c = getch()) == ' ' || c == '\t')
+     if(line[li] == '\0')
+        if(getline(line,MAXLINE) == 0)
+            return EOF;
+        else
+            li =0;
+    while ((s[0] = c =line[li++]) == ' ' || c == '\t')
         ;
     s[1] = '\0';
    
@@ -137,32 +138,29 @@ int getop(char s[])
         return c; /* not a number */
     i = 0;
     if (isdigit(c)) /* collect integer part */
-        while (isdigit(s[++i] = c = getch()));
+        while (isdigit(s[++i] = c =line[li++]));
     if(c=='-')
-      if(isdigit(s[++i] = c = getch()));
+      if(isdigit(s[++i] = c = line[li++]));
       else 
         return '-';
     if (isdigit(c)) /* collect integer part */
-        while (isdigit(s[++i] = c = getch()));
+        while (isdigit(s[++i] = c = line[li++]));
    
      if (c == '.') /* collect fraction part */
-        while (isdigit(s[++i] = c = getch()));
+        while (isdigit(s[++i] = c =line[li++]));
     s[i] = '\0';
-    if (c != EOF)
-        ungetch(c);
     return NUMBER;
 }
 
-char buf[BUFSIZE]; /* buffer for ungetch */
-int bufp = 0; /* next free position in buf */
-int getch(void) /* get a (possibly pushed-back) character */
+/* getline: get line into s, return length */
+int getline(char s[], int lim)
 {
-    return (bufp > 0) ? buf[--bufp] : getchar();
-}
-void ungetch(int c) /* push character back on input */
-{
-    if (bufp >= BUFSIZE)
-        printf("ungetch: too many characters\n");
-    else
-        buf[bufp++] = c;
+    int c, i;
+    i = 0;
+    while (--lim > 0 && (c=getchar()) != EOF && c != '\n')
+        s[i++] = c;
+    if (c == '\n')
+        s[i++] = c;
+    s[i] = '\0';
+    return i;
 }
